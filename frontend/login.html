@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: #0d0e12;
+            color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- Interactive Particle Canvas --- */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* --- Dynamic Ambient Background --- */
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+            z-index: 0;
+            animation: floatAmbient 12s infinite ease-in-out;
+            pointer-events: none;
+        }
+        body::after {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(0,0,0,0) 70%);
+            animation-delay: -6s;
+            animation-duration: 16s;
+        }
+        @keyframes floatAmbient {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, 40px) scale(1.2); }
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            z-index: 1;
+            perspective: 1000px;
+        }
+
+        .auth-card {
+            background: rgba(25, 27, 35, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+            
+            /* Enhanced Reveal Animation */
+            opacity: 0;
+            transform: translateY(30px);
+            animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.1s ease;
+        }
+
+        /* --- Interactive Card Glow Spotlight --- */
+        .card-glow {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(0,0,0,0) 70%);
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        /* --- Error Shake Animation --- */
+        .auth-card.shake {
+            animation: shakeError 0.4s ease-in-out;
+        }
+
+        @keyframes cardReveal {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* --- Staggered Entrance Animations for Content --- */
+        .animate-fade {
+            opacity: 0;
+            animation: elementFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .del-1 { animation-delay: 0.15s; }
+        .del-2 { animation-delay: 0.25s; }
+        .del-3 { animation-delay: 0.35s; }
+        .del-4 { animation-delay: 0.45s; }
+
+        @keyframes elementFade {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            color: #9ca3af;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #9ca3af;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            padding-right: 2.75rem; /* Space for the toggle eye */
+            background: #181a23;
+            border: 1px solid #2d3142;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Interactive micro bounce on field focus */
+        .input-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: #1c1e2b;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2), 0 4px 12px rgba(99, 102, 241, 0.1);
+            transform: scale(1.01);
+        }
+
+        /* --- Password Show/Hide Toggle Button --- */
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s ease, transform 0.1s ease;
+        }
+        .password-toggle:hover {
+            color: #6366f1;
+        }
+        .password-toggle:active {
+            transform: translateY(-50%) scale(0.85);
+        }
+
+        .utilities {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Elastic magnetic base wrapper */
+        .magnetic-link-wrap {
+            display: inline-block;
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .utilities a, .auth-footer a {
+            color: #9ca3af;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .utilities a:hover, .auth-footer a:hover {
+            color: #6366f1;
+            text-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+        }
+
+        /* --- Shimmering & Magnetic Button Architecture --- */
+        .btn-wrapper {
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 4px; 
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.85rem;
+            background: #6366f1;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s ease, transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.3s ease;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            animation: shimmerLoop 5s infinite ease-in-out;
+        }
+
+        @keyframes shimmerLoop {
+            0% { left: -150%; }
+            30%, 100% { left: 150%; }
+        }
+
+        .btn:hover {
+            background: #4f46e5;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.95) !important;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="auth-container">
+        <div class="auth-card" id="tilt-card">
+            <div class="card-glow" id="card-glow"></div>
+            
+            <div class="animate-fade del-1">
+                <h2>Welcome back</h2>
+                <p class="subtitle">Enter your details to access your account.</p>
+            </div>
+            
+            <form id="login-form" action="success.html" novalidate>
+                <div class="input-group animate-fade del-2">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-wrapper">
+                        <input type="email" id="login-email" placeholder="name@example.com" required autocomplete="email">
+                    </div>
+                </div>
+                
+                <div class="input-group animate-fade del-3">
+                    <label for="login-password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle Password Visibility">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eye-icon">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="utilities animate-fade del-3">
+                    <div class="magnetic-link-wrap">
+                        <a href="#" class="magnetic-link">Forgot password?</a>
+                    </div>
+                </div>
+                
+                <div class="btn-wrapper animate-fade del-4">
+                    <button type="submit" id="magnetic-btn" class="btn">Sign In</button>
+                </div>
+            </form>
+            
+            <div class="auth-footer animate-fade del-4">
+                Don't have an account? 
+                <div class="magnetic-link-wrap">
+                    <a href="signup.html" class="magnetic-link">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 3D Parallax Hover & Dynamic Tracking Glow ---
+        const card = document.getElementById('tilt-card');
+        const container = document.querySelector('.auth-container');
+        const glow = document.getElementById('card-glow');
+
+        container.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            
+            // Mouse math relative to center of the card
+            const x = e.clientX - rect.left - (rect.width / 2);
+            const y = e.clientY - rect.top - (rect.height / 2);
+            
+            const rotateX = -(y / (rect.height / 2)) * 6;
+            const rotateY = (x / (rect.width / 2)) * 6;
+
+            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+            // Handle spotlight placement tracking inside the card
+            const glowX = e.clientX - rect.left;
+            const glowY = e.clientY - rect.top;
+            glow.style.left = `${glowX}px`;
+            glow.style.top = `${glowY}px`;
+        });
+
+        container.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+            card.style.transition = 'transform 0.5s ease';
+        });
+
+        container.addEventListener('mouseenter', () => {
+            card.style.transition = 'none';
+        });
+
+
+        // --- 2. Passwords Visibility Toggle ---
+        const passwordInput = document.getElementById('login-password');
+        const passwordToggle = document.getElementById('password-toggle');
+        const eyeIcon = document.getElementById('eye-icon');
+
+        passwordToggle.addEventListener('click', () => {
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+            
+            // Visually transform the SVG path line dynamically if toggled open/shut
+            if (isPassword) {
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            }
+        });
+
+
+        // --- 3. Omni-Magnetic Elements Control (Buttons & Text Links) ---
+        const magneticBtn = document.getElementById('magnetic-btn');
+        const magneticLinks = document.querySelectorAll('.magnetic-link-wrap');
+        
+        document.addEventListener('mousemove', (e) => {
+            // Magnetic Button mechanics
+            const mRect = magneticBtn.getBoundingClientRect();
+            const mX = mRect.left + mRect.width / 2;
+            const mY = mRect.top + mRect.height / 2;
+            const distBtn = Math.hypot(e.clientX - mX, e.clientY - mY);
+            
+            if (distBtn < 80) {
+                magneticBtn.style.transform = `translate(${(e.clientX - mX) * 0.35}px, ${(e.clientY - mY) * 0.35}px)`;
+            } else {
+                magneticBtn.style.transform = `translate(0px, 0px)`;
+            }
+
+            // Magnetic Link adjustments
+            magneticLinks.forEach(wrap => {
+                const linkRect = wrap.getBoundingClientRect();
+                const linkX = linkRect.left + linkRect.width / 2;
+                const linkY = linkRect.top + linkRect.height / 2;
+                const distLink = Math.hypot(e.clientX - linkX, e.clientY - linkY);
+
+                if (distLink < 45) {
+                    wrap.style.transform = `translate(${(e.clientX - linkX) * 0.25}px, ${(e.clientY - linkY) * 0.25}px)`;
+                } else {
+                    wrap.style.transform = `translate(0px, 0px)`;
+                }
+            });
+        });
+
+
+        // --- 4. Form Validation Error Shake ---
+        const form = document.getElementById('login-form');
+        form.addEventListener('submit', (e) => {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
+
+            if (!email || !pass) {
+                e.preventDefault();
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 400);
+            }
+        });
+
+
+        // --- 5. Interactive Background Particle Field ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null, radius: 120 };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.baseX = this.x;
+                this.baseY = this.y;
+                this.size = Math.random() * 2 + 1;
+                this.density = (Math.random() * 30) + 10;
+                this.alpha = Math.random() * 0.5 + 0.2;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(99, 102, 241, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            update() {
+                let dx = mouse.x - this.x;
+                let dy = mouse.y - this.y;
+                let distance = Math.hypot(dx, dy);
+                if (distance < mouse.radius) {
+                    let force = (mouse.radius - distance) / mouse.radius;
+                    this.x -= (dx / distance) * force * this.density;
+                    this.y -= (dy / distance) * force * this.density;
+                } else {
+                    if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 15;
+                    if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 15;
+                }
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const count = Math.floor((canvas.width * canvas.height) / 9000);
+            for (let i = 0; i < count; i++) particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+        window.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+        window.addEventListener('resize', resizeCanvas);
+        
+        resizeCanvas();
+        animate();
+    </script>
+</body>
+</html>
